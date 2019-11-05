@@ -169,17 +169,34 @@ void Command::execute()
 			!strcmp(_simpleCommands[i]->_arguments[0], "exit") ||
 			!strcmp(_simpleCommands[i]->_arguments[0], "quit")) { // exit
 				exit(1);
-		} // other special commands with child = 1 and continue;
-		else { 
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "cd")) {
+			if(_simpleCommands[i]->_numberOfArguments != 2) {
+				fprintf(stderr, "%s", "Invalid number of arguments\n");
+			} else {
+				int ret = chdir(_simpleCommands[i]->_arguments[1]);
+				if(ret) {
+					// chdir failed, perror it
+					perror("cd");
+				}
+			}
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "help")) {
+			// ignore args
+			fprintf(stdout, "%s", "Builtin commands:\n  cd: change directory\n"
+				"  exit/bye/quit: to quit shell\n  help: to view this message\n");
+			child = 1;
+			continue;
+		} else { 
 			// else we fork!
 			child = fork();
 		}
 		
-		if(child == 0) { //child process
+		if(child == 0) { // child process
 			signal(SIGINT, SIG_DFL); // reset signal
 			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
 
-			//if the child process reaches this point, then execvp must have failed
+			// if the child process reaches this point, then execvp must have failed
 			perror("execvp");
 			exit(1);
 		} else if(child < 0) {

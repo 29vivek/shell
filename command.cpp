@@ -163,17 +163,28 @@ void Command::execute()
 			dup2(fdOut, 2); 
 		}
 		close(fdOut); //close fdOut since we're done with it
- 
-		child = fork();
+		
+		// check for special commands
+		if (!strcmp(_simpleCommands[i]->_arguments[0], "bye") || 
+			!strcmp(_simpleCommands[i]->_arguments[0], "exit") ||
+			!strcmp(_simpleCommands[i]->_arguments[0], "quit")) { // exit
+				exit(1);
+		} // other special commands with child = 1 and continue;
+		else { 
+			// else we fork!
+			child = fork();
+		}
+		
 		if(child == 0) { //child process
+			signal(SIGINT, SIG_DFL); // reset signal
 			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
 
 			//if the child process reaches this point, then execvp must have failed
 			perror("execvp");
-			_exit(1);
+			exit(1);
 		} else if(child < 0) {
 			fprintf(stderr, "Fork failed\n");
-			_exit(1);
+			exit(1);
 		}
 
 	} // endfor
@@ -208,8 +219,26 @@ SimpleCommand * Command::_currentSimpleCommand;
 
 int yyparse(void);
 
+void sigint_handler(int p) {
+	printf("\n");
+	Command::_currentCommand.clear();
+	Command::_currentCommand.prompt();
+}
+
+
 int main()
 {
+	struct sigaction sa;
+	sa.sa_handler = sigint_handler;
+	sa.sa_flags = SA_RESTART; // restart any interrupted system calls
+	sigemptyset(&sa.sa_mask);
+
+	// set the SIGINT handler
+	if (sigaction(SIGINT, &sa, NULL) == -1) {
+		perror("sigaction");
+		exit(1);
+	}
+
 	Command::_currentCommand.prompt();
 	yyparse();
 	return 0;

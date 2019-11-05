@@ -9,6 +9,7 @@
 %{
 
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h> // for open() arguments
 #include "command.h"
 void yyerror(const char * s);
@@ -44,7 +45,7 @@ simple_command:
 	;
 
 pipe_list:
-	pipe_list PIPE command_and_args 
+	pipe_list PIPE command_and_args
 	| command_and_args 
 	;
 

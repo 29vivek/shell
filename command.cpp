@@ -159,7 +159,7 @@ void Command::execute()
 		}
 
 		
-		dup2(fdOut, 1);  // redirect output
+		dup2(fdOut, 1);  // redirect output (stdout to fdOut)
 		if(_errFile) {  // redirect error at same location as output if necessary
 			dup2(fdOut, 2); 
 		}
@@ -204,7 +204,7 @@ void Command::execute()
 			} else {
 				if(!isdigit(_simpleCommands[i]->_arguments[1][0]) ||
 					!isdigit(_simpleCommands[i]->_arguments[2][0])) {
-						printf("Invalid operands!\n");
+						fprintf(stderr, "%s", "Invalid operands!\n");
 						break;
 					}
 				double a = atoi(_simpleCommands[i]->_arguments[1]);

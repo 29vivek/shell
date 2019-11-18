@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <signal.h>
+#include <ctype.h>
 #include <fcntl.h>
 
 #include "command.h"
@@ -184,7 +185,59 @@ void Command::execute()
 		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "help")) {
 			// ignore args
 			fprintf(stdout, "%s", "Builtin commands:\n  cd: change directory\n"
-				"  exit/bye/quit: to quit shell\n  help: to view this message\n");
+				"  exit/bye/quit: to quit shell\n  isleap: check if year is leap year\n"
+				"  op: op followed by 2 operands followed by +, -, * or /\n"
+				"  hello: say hello"
+				"  help: to view this message\n");
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "hello")) {
+			// ignore args
+			char* user = getenv("USER");
+			printf("hello %s. having a great day?\n", user);
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "op")) {
+			// op 6 7 + of this type
+			if(_simpleCommands[i]->_numberOfArguments != 4) {
+				fprintf(stderr, "%s", "Invalid number of arguments\nUse help to know usage\n");
+			} else {
+				if(!isdigit(_simpleCommands[i]->_arguments[1][0]) ||
+					!isdigit(_simpleCommands[i]->_arguments[2][0])) {
+						printf("Invalid operands!\n");
+						break;
+					}
+				double a = atoi(_simpleCommands[i]->_arguments[1]);
+				double b = atoi(_simpleCommands[i]->_arguments[2]);
+				switch(_simpleCommands[i]->_arguments[3][0]) {
+					case '+': printf("addition gives: %.2f\n", a+b); break;
+					case '-': printf("subtraction gives: %.2f\n", a-b); break;
+					case '*': printf("multiplication gives: %.2f\n", a*b); break;
+					case '/': printf("division gives: %.2f\n", a/b); break;
+					default: printf("Invalid operation!\n");
+				}
+			}
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "isleap")) {
+			// convert args into int and check
+			if(_simpleCommands[i]->_numberOfArguments < 2) {
+				fprintf(stderr, "%s", "Invalid number of arguments\n");
+			} else {
+				for(int j=1; j<_simpleCommands[i]->_numberOfArguments; j++) {
+					int year = atoi(_simpleCommands[i]->_arguments[j]);
+					if(!year) {
+						// invalid input - a string
+						printf("%s is not a year!\n", _simpleCommands[i]->_arguments[j]);
+						continue;
+					}
+					if((year%4 == 0) && (year%100 != 0 || year%400 == 0)) {
+						printf("%d is a leap year.\n", year);
+					} else {
+						printf("%d is not a leap year.\n", year);
+					}
+				}
+			}
 			child = 1;
 			continue;
 		} else { 

@@ -7,7 +7,7 @@
 #include <signal.h>
 #include <ctype.h>
 #include <fcntl.h>
-
+#include <math.h>
 #include "command.h"
 
 SimpleCommand::SimpleCommand()
@@ -186,15 +186,25 @@ void Command::execute()
 			// ignore args
 			fprintf(stdout, "%s", "Builtin commands:\n  cd: change directory\n"
 				"  exit/bye/quit: to quit shell\n  isleap: check if year is leap year\n"
-				"  op: op followed by 2 operands followed by +, -, * or /\n"
-				"  hello: say hello"
+				"  op: op followed by 2 operands followed by +,-,*,/,%,A,R,X\n"
+				"  trignometry op: tri followed by 1 operand in radiands followed by s,c,t\n"
+				"  day: find day. give date in dd mm yyyy\n"
+				"  pic: Take a pic (on ubuntu. use at own risk xd)\n"
+				"  hello: say hello\n"
 				"  help: to view this message\n");
 			child = 1;
 			continue;
 		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "hello")) {
 			// ignore args
 			char* user = getenv("USER");
-			printf("hello %s. having a great day?\n", user);
+			printf("hello %s. havin a good day? \n", user);
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "pic")) {
+			// use this to flex on someone
+			system("sudo apt-get install fswebcam");
+			system("fswebcam -r 640x480 --jpeg 85 -F 50 -D 1 stdout");
+			system("eog stdout");
 			child = 1;
 			continue;
 		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "op")) {
@@ -214,6 +224,49 @@ void Command::execute()
 					case '-': printf("subtraction gives: %.2f\n", a-b); break;
 					case '*': printf("multiplication gives: %.2f\n", a*b); break;
 					case '/': printf("division gives: %.2f\n", a/b); break;
+					case '%': printf("reminder gives: %.2f\n", (double)((int)a%(int)b)); break;
+					case 'A': printf("AND op gives: %.2f\n", (double)((int)a&(int)b)); break;
+					case 'R': printf("OR op gives: %.2f\n", (double)((int)a|(int)b)); break;
+					case 'X': printf("XOR op gives: %.2f\n", (double)((int)a^(int)b)); break;
+					default: printf("Invalid operation!\n");
+				}
+			}
+			child = 1;
+			continue;
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "day")) {
+			if(_simpleCommands[i]->_numberOfArguments != 4) {
+				fprintf(stderr, "%s", "Invalid date format\nUse help to know usage\n");
+			} else {
+				if(!isdigit(_simpleCommands[i]->_arguments[1][0]) ||
+					!isdigit(_simpleCommands[i]->_arguments[2][0])|| !isdigit(_simpleCommands[i]->_arguments[3][0] )) {
+						fprintf(stderr, "%s", "Invalid date !\n");
+						break;
+				}
+				int d = atoi(_simpleCommands[i]->_arguments[1]);
+				int m = atoi(_simpleCommands[i]->_arguments[2]);
+				int y = atoi(_simpleCommands[i]->_arguments[3]);
+				char w[][10]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+				int t[] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };  
+    			y -= m < 3;  
+    			int j= (y + y / 4 - y / 100 +  y / 400 + t[m - 1] + d) % 7; 
+    			printf("%d/%d/%d comes on a %s\n", d, m, y, w[j]);
+			}
+				
+			child = 1;
+			continue;			
+		} else if(!strcmp(_simpleCommands[i]->_arguments[0], "tri")) {
+			if(_simpleCommands[i]->_numberOfArguments != 3) {
+				fprintf(stderr, "%s", "Invalid number of arguments\nUse help to know usage\n");
+			} else {
+				if(!isdigit(_simpleCommands[i]->_arguments[1][0])) {
+					fprintf(stderr, "%s", "Invalid operand!\n");
+					break;
+				}
+				double a = atoi(_simpleCommands[i]->_arguments[1]);
+				switch(_simpleCommands[i]->_arguments[2][0]) {
+					case 's': printf("sin(%.2f rad) gives: %.2f\n", a, sin(a)); break;
+					case 'c': printf("cos(%.2f rad) gives: %.2f\n", a, cos(a)); break;
+					case 't': printf("tan(%.2f rad) gives: %.2f\n", a, tan(a)); break;
 					default: printf("Invalid operation!\n");
 				}
 			}
@@ -294,7 +347,6 @@ void sigint_handler(int p) {
 	Command::_currentCommand.clear();
 	Command::_currentCommand.prompt();
 }
-
 
 int main()
 {
